@@ -176,16 +176,16 @@ router.patch('/update', catchAsync(async (req, res, next) => {
                 memberId: value.memberId
             }
         })
-    }
-    ids.map(async (cat) => {
-
-        await prisma.memberSubCategory.create({
-            data: {
-                memberId: value.id,
-                subCategoryId: cat
-            }
+        ids.map(async (cat) => {
+    
+            await prisma.memberSubCategory.create({
+                data: {
+                    memberId: value.id,
+                    subCategoryId: cat
+                }
+            })
         })
-    })
+    }
     res.status(200).json({ msg: 'Member register successful', data: updateMember });
 }));
 
