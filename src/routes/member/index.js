@@ -186,7 +186,7 @@ router.patch('/update', catchAsync(async (req, res, next) => {
             })
         })
     }
-    res.status(200).json({ msg: 'Member register successful', data: updateMember });
+    res.status(200).json({ msg: 'Member update successful', data: updateMember });
 }));
 
 router.delete('/delete', isLoggedIn, catchAsync(async (req, res, next) => {
