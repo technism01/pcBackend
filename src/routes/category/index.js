@@ -41,6 +41,42 @@ router.get('/view', isLoggedIn, catchAsync(async (req, res, next) => {
     res.status(200).json({ msg: 'Category found successful', data: category });
 }));
 
+router.delete('/delete', isLoggedIn, catchAsync(async (req, res, next) => {
+
+
+    const categoryFind = await prisma.category.findUnique({
+        where : {
+            id: req.body.id
+        }
+    });
+    if (!categoryFind) return res.status(404).json({ msg: `Category not found`, data: {} });
+    
+    await prisma.subCategory.deleteMany({
+        where : {
+            categoryId: req.body.id
+        }
+    });
+    await prisma.memberSubCategory.deleteMany({
+        where:{
+            subCategoryId: null
+        }
+    })
+    await prisma.request.deleteMany({
+        where : {
+            categoryId: req.body.id
+        }
+    });
+
+
+    const category = await prisma.category.delete({
+        where : {
+            id: req.body.id
+        }
+    });
+    // console.log(category);
+    res.status(200).json({ msg: 'Category delete successful', data: category });
+}));
+
 
 
 module.exports = router;

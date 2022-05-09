@@ -98,7 +98,7 @@ router.post('/login', catchAsync(async (req, res, next) => {
     });
     // console.log(memberLogin);
     if (!memberLogin) return res.status(404).json({ msg: `This Number is not registered`, data: {} });
-
+   
     const mySubCategory = await prisma.memberSubCategory.findMany({
         where: {
             memberId: memberLogin.id
@@ -187,6 +187,32 @@ router.patch('/update', catchAsync(async (req, res, next) => {
         })
     })
     res.status(200).json({ msg: 'Member register successful', data: updateMember });
+}));
+
+router.delete('/delete', isLoggedIn, catchAsync(async (req, res, next) => {
+
+
+    const memberFind = await prisma.member.findUnique({
+        where : {
+            id: req.body.id
+        }
+    });
+    if (!memberFind) return res.status(404).json({ msg: `Member not found`, data: {} });
+    
+    await prisma.memberSubCategory.deleteMany({
+        where : {
+            memberId: req.body.id
+        }
+    });
+
+
+    const member = await prisma.member.delete({
+        where : {
+            id: req.body.id
+        }
+    });
+    // console.log(category);
+    res.status(200).json({ msg: 'Member found successful', data: member });
 }));
 
 // router.get('/', isLoggedIn, catchAsync(async (req, res, next) => {
