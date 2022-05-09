@@ -1,0 +1,67 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("LOCAL_DATABASE_URL")
+}
+
+
+model Category {
+  id          Int           @id @default(autoincrement())
+  name        String
+  subCategory SubCategory[]
+  request     Request[]
+
+  createdAt DateTime @default(now())
+}
+
+model SubCategory {
+  id   Int    @id @default(autoincrement())
+  name String
+
+  createdAt         DateTime            @default(now())
+  Category          Category?           @relation(fields: [categoryId], references: [id])
+  categoryId        Int?
+  memberSubCategory MemberSubCategory[]
+  request           Request[]
+}
+
+model Member {
+  id                Int                 @id @default(autoincrement())
+  name              String
+  mobileNumber      String
+  pcGroup           String
+  companyName       String              @default("")
+  email             String?
+  profile           String?
+  // categoryIds    Int[]
+  // subCategoryIds    Int[]
+  memberSubCategory MemberSubCategory[]
+  request           Request[]
+  createdAt         DateTime            @default(now())
+}
+
+model MemberSubCategory {
+  id            Int          @id @default(autoincrement())
+  Member        Member?      @relation(fields: [memberId], references: [id])
+  memberId      Int?
+  SubCategory   SubCategory? @relation(fields: [subCategoryId], references: [id])
+  subCategoryId Int?
+  createdAt         DateTime            @default(now())
+}
+
+model Request {
+  id            Int          @id @default(autoincrement())
+  Member        Member?      @relation(fields: [memberId], references: [id])
+  memberId      Int?
+  SubCategory   SubCategory? @relation(fields: [subCategoryId], references: [id])
+  subCategoryId Int?
+  Category      Category?    @relation(fields: [categoryId], references: [id])
+  categoryId    Int?
+  createdAt     DateTime     @default(now())
+}
