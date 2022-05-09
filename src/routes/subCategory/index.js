@@ -31,7 +31,6 @@ router.post('/add', isLoggedIn, catchAsync(async (req, res, next) => {
 router.get('/view', isLoggedIn, catchAsync(async (req, res, next) => {
 
 
-    // const { mobile_number, email } = req.body;
     const category = await prisma.category.findMany({
         orderBy: {
             name: "asc"
