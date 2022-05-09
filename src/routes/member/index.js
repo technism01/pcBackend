@@ -61,20 +61,20 @@ router.post('/signup', catchAsync(async (req, res, next) => {
         where: {
             memberId: addMember.id
         },
-        include: {
-            SubCategory: {
-                select: {
-                    id: true,
-                    name: true,
-                    Category: {
-                        select: {
-                            id: true,
-                            name: true
-                        }
-                    }
-                }
-            }
-        }
+        // include: {
+        //     SubCategory: {
+        //         select: {
+        //             id: true,
+        //             name: true,
+        //             Category: {
+        //                 select: {
+        //                     id: true,
+        //                     name: true
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
     })
     // console.log(addMember);
     const token = generateToken(addMember.id);
@@ -103,20 +103,20 @@ router.post('/login', catchAsync(async (req, res, next) => {
         where: {
             memberId: memberLogin.id
         },
-        include: {
-            SubCategory: {
-                select: {
-                    id: true,
-                    name: true,
-                    Category: {
-                        select: {
-                            id: true,
-                            name: true
-                        }
-                    }
-                }
-            }
-        }
+        // include: {
+        //     SubCategory: {
+        //         select: {
+        //             id: true,
+        //             name: true,
+        //             Category: {
+        //                 select: {
+        //                     id: true,
+        //                     name: true
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
     })
     // console.log(addMember);
     const token = generateToken(memberLogin.id);
@@ -186,7 +186,26 @@ router.patch('/update', catchAsync(async (req, res, next) => {
             })
         })
     }
-    res.status(200).json({ msg: 'Member update successful', data: updateMember });
+    const mySubCategory = await prisma.memberSubCategory.findMany({
+        where: {
+            memberId: value.id
+        },
+        // include: {
+        //     SubCategory: {
+        //         select: {
+        //             id: true,
+        //             name: true,
+        //             Category: {
+        //                 select: {
+        //                     id: true,
+        //                     name: true
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
+    })
+    res.status(200).json({ msg: 'Member update successful', data: updateMember, mySubCategory: mySubCategory });
 }));
 
 router.delete('/delete', isLoggedIn, catchAsync(async (req, res, next) => {
@@ -205,7 +224,11 @@ router.delete('/delete', isLoggedIn, catchAsync(async (req, res, next) => {
         }
     });
 
-
+    await prisma.request.deleteMany({
+        where : {
+            memberId: req.body.id
+        }
+    })
     const member = await prisma.member.delete({
         where : {
             id: req.body.id

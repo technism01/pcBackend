@@ -79,15 +79,16 @@ router.get('/viewRequirement', isLoggedIn, catchAsync(async (req, res, next) => 
                 Member: true
             }
         })
+        // console.log(member);
         let memberArray = [];
         for (let j = 0; j < member.length; j++) {
             // console.log(member[j].Member.id);
+            // console.log("=================");
             if (member[j].Member.id != req.query.memberId) {
                 memberArray.push(member[j].Member)
             }
         }
         // console.log(member);
-        // console.log("=================");
         if (newArray.length > 0) {
             // console.log("vve" + newArray.length);
             for (v = 0; v < newArray.length; v++) {
