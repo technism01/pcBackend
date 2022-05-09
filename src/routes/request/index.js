@@ -52,7 +52,7 @@ router.get('/viewRequirement', isLoggedIn, catchAsync(async (req, res, next) => 
     // if(req.query.memberId == "" && req.query.memberId == null) if (error) return res.status(400).json({ msg: 'Member id must be require', data: {} });
     const { error, value } = myRequestValidation(req.query);
     if (error) return res.status(400).json({ msg: error.details[0].message, data: {} });
-    console.log(value);
+    // console.log(value);
     const array = await prisma.request.findMany({
         where: {
             memberId: parseInt(req.query.memberId)
@@ -127,7 +127,8 @@ router.get('/viewRequirement', isLoggedIn, catchAsync(async (req, res, next) => 
         // console.log("===========================");
         // }
     }
-    res.status(200).json({ msg: 'lead found successful', data: newArray });
+    // if(newArray.length == 0 ) return res.status(404).json({ msg: 'My Requirement not found', data: [] });
+    res.status(200).json({ msg: 'My Requirement found successful', data: newArray });
 
     // console.log(category);
 }));

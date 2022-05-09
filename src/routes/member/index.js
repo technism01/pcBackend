@@ -61,6 +61,21 @@ router.post('/signup', catchAsync(async (req, res, next) => {
         where: {
             memberId: addMember.id
         },
+        select: {
+            id: true,
+            memberId: true,
+            subCategoryId: true,
+            createdAt: true,
+            SubCategory: {
+                select: {
+                    Category: {
+                        select: {
+                            id: true
+                        }
+                    }
+                }
+            }
+        }
         // include: {
         //     SubCategory: {
         //         select: {
@@ -76,11 +91,22 @@ router.post('/signup', catchAsync(async (req, res, next) => {
         //     }
         // }
     })
+    for (let i = 0; i < mySubCategory.length; i++) {
+        let obj = {
+            id: mySubCategory[i].id,
+            memberId: mySubCategory[i].memberId,
+            subCategoryId: mySubCategory[i].subCategoryId,
+            categoryId: mySubCategory[i].SubCategory.Category.id,
+            createdAt: mySubCategory[i].createdAt
+        };
+        mySubCategory[i] = obj;
+
+    }
     // console.log(addMember);
     const token = generateToken(addMember.id);
     // console.log(token);
     res.setHeader('x-authorization', token);
-    res.status(201).json({ msg: 'Member register successful', data: addMember, token: token, mySubCategory : mySubCategory });
+    res.status(201).json({ msg: 'Member register successful', data: addMember, token: token, mySubCategory: mySubCategory });
 }));
 
 router.post('/login', catchAsync(async (req, res, next) => {
@@ -98,11 +124,26 @@ router.post('/login', catchAsync(async (req, res, next) => {
     });
     // console.log(memberLogin);
     if (!memberLogin) return res.status(404).json({ msg: `This Number is not registered`, data: {} });
-   
+
     const mySubCategory = await prisma.memberSubCategory.findMany({
         where: {
             memberId: memberLogin.id
         },
+        select: {
+            id: true,
+            memberId: true,
+            subCategoryId: true,
+            createdAt: true,
+            SubCategory: {
+                select: {
+                    Category: {
+                        select: {
+                            id: true
+                        }
+                    }
+                }
+            }
+        }
         // include: {
         //     SubCategory: {
         //         select: {
@@ -118,11 +159,22 @@ router.post('/login', catchAsync(async (req, res, next) => {
         //     }
         // }
     })
+    for (let i = 0; i < mySubCategory.length; i++) {
+        let obj = {
+            id: mySubCategory[i].id,
+            memberId: mySubCategory[i].memberId,
+            subCategoryId: mySubCategory[i].subCategoryId,
+            categoryId: mySubCategory[i].SubCategory.Category.id,
+            createdAt: mySubCategory[i].createdAt
+        };
+        mySubCategory[i] = obj;
+
+    }
     // console.log(addMember);
     const token = generateToken(memberLogin.id);
     // console.log(token);
     res.setHeader('x-authorization', token);
-    res.status(200).json({ msg: 'Login successful', data: memberLogin, token: token , mySubCategory: mySubCategory});
+    res.status(200).json({ msg: 'Login successful', data: memberLogin, token: token, mySubCategory: mySubCategory });
 }));
 
 router.patch('/update', catchAsync(async (req, res, next) => {
@@ -165,8 +217,8 @@ router.patch('/update', catchAsync(async (req, res, next) => {
     // console.log(memberExistsNumber);
 
     const updateMember = await prisma.member.update({
-        where: { 
-            id: value.id 
+        where: {
+            id: value.id
         },
         data: value
     });
@@ -177,7 +229,7 @@ router.patch('/update', catchAsync(async (req, res, next) => {
             }
         })
         ids.map(async (cat) => {
-    
+
             await prisma.memberSubCategory.create({
                 data: {
                     memberId: value.id,
@@ -190,6 +242,21 @@ router.patch('/update', catchAsync(async (req, res, next) => {
         where: {
             memberId: value.id
         },
+        select: {
+            id: true,
+            memberId: true,
+            subCategoryId: true,
+            createdAt: true,
+            SubCategory: {
+                select: {
+                    Category: {
+                        select: {
+                            id: true
+                        }
+                    }
+                }
+            }
+        }
         // include: {
         //     SubCategory: {
         //         select: {
@@ -205,6 +272,17 @@ router.patch('/update', catchAsync(async (req, res, next) => {
         //     }
         // }
     })
+    for (let i = 0; i < mySubCategory.length; i++) {
+        let obj = {
+            id: mySubCategory[i].id,
+            memberId: mySubCategory[i].memberId,
+            subCategoryId: mySubCategory[i].subCategoryId,
+            categoryId: mySubCategory[i].SubCategory.Category.id,
+            createdAt: mySubCategory[i].createdAt
+        };
+        mySubCategory[i] = obj;
+
+    }
     res.status(200).json({ msg: 'Member update successful', data: updateMember, mySubCategory: mySubCategory });
 }));
 
@@ -212,25 +290,25 @@ router.delete('/delete', isLoggedIn, catchAsync(async (req, res, next) => {
 
 
     const memberFind = await prisma.member.findUnique({
-        where : {
+        where: {
             id: req.body.id
         }
     });
     if (!memberFind) return res.status(404).json({ msg: `Member not found`, data: {} });
-    
+
     await prisma.memberSubCategory.deleteMany({
-        where : {
+        where: {
             memberId: req.body.id
         }
     });
 
     await prisma.request.deleteMany({
-        where : {
+        where: {
             memberId: req.body.id
         }
     })
     const member = await prisma.member.delete({
-        where : {
+        where: {
             id: req.body.id
         }
     });
