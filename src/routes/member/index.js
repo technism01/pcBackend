@@ -40,6 +40,7 @@ router.post('/signup', catchAsync(async (req, res, next) => {
 
     // const { mobile_number, email } = req.body;
     const ids = value.subCategoryIds
+    console.log("IDS=> " + ids);
     delete value.subCategoryIds;
     const memberExistsNumber = await prisma.member.findFirst({
         where: {
@@ -49,14 +50,26 @@ router.post('/signup', catchAsync(async (req, res, next) => {
     // console.log(memberExistsNumber);
     if (memberExistsNumber) return res.status(409).json({ msg: `Number is already registered`, data: {} });
     const addMember = await prisma.member.create({ data: value });
-    ids.map(async (cat) => {
+    console.log("addMember => " + addMember);
+    // ids.map(async (cat) => {
+    //     const data = await prisma.memberSubCategory.create({
+    //         data: {
+    //             memberId: addMember.id,
+    //             subCategoryId: cat
+    //         }
+    //     })
+    //     console.log("DATA=> " + data);
+    // })
+    for (let i = 0; i < ids.length; i++) {
+
         await prisma.memberSubCategory.create({
             data: {
                 memberId: addMember.id,
-                subCategoryId: cat
+                subCategoryId: ids[i]
             }
         })
-    })
+
+    }
     const mySubCategory = await prisma.memberSubCategory.findMany({
         where: {
             memberId: addMember.id
@@ -91,6 +104,7 @@ router.post('/signup', catchAsync(async (req, res, next) => {
         //     }
         // }
     })
+    console.log("mySubCategory=> " + mySubCategory);
     for (let i = 0; i < mySubCategory.length; i++) {
         let obj = {
             id: mySubCategory[i].id,
@@ -102,6 +116,7 @@ router.post('/signup', catchAsync(async (req, res, next) => {
         mySubCategory[i] = obj;
 
     }
+    console.log("NEW mySubCategory => " + mySubCategory);
     // console.log(addMember);
     const token = generateToken(addMember.id);
     // console.log(token);
@@ -182,6 +197,7 @@ router.patch('/update', catchAsync(async (req, res, next) => {
 
     if (req.files !== null) {
         if (req.files.profile) {
+            console.log(req.files.profile);
             const profile_file = req.files.profile;
             const store_file_path = "src/public/member/profile/";
             const concat_file_name = nanoid();
@@ -222,21 +238,36 @@ router.patch('/update', catchAsync(async (req, res, next) => {
         },
         data: value
     });
-    if (ids) {
-        await prisma.memberSubCategory.deleteMany({
+    // console.log(ids);
+    if (ids && ids.length > 0) {
+        const data = await prisma.memberSubCategory.deleteMany({
             where: {
-                memberId: value.memberId
+                memberId: value.id
             }
         })
-        ids.map(async (cat) => {
+        // console.log(data);
+        for (let i = 0; i < ids.length; i++) {
 
             await prisma.memberSubCategory.create({
                 data: {
                     memberId: value.id,
-                    subCategoryId: cat
+                    subCategoryId: ids[i]
                 }
             })
-        })
+
+        }
+        // ids.map(async (cat) => {
+        //     // const obj = {
+        //     //     memberId: value.id,
+        //     //     subCategoryId: cat
+        //     // }
+        //     await prisma.memberSubCategory.create({
+        //         data: {
+        //             memberId: value.id,
+        //             subCategoryId: cat
+        //         }
+        //     })
+        // })
     }
     const mySubCategory = await prisma.memberSubCategory.findMany({
         where: {
@@ -272,6 +303,8 @@ router.patch('/update', catchAsync(async (req, res, next) => {
         //     }
         // }
     })
+    // console.log("===============================================");
+    // console.log(mySubCategory);
     for (let i = 0; i < mySubCategory.length; i++) {
         let obj = {
             id: mySubCategory[i].id,
@@ -283,6 +316,8 @@ router.patch('/update', catchAsync(async (req, res, next) => {
         mySubCategory[i] = obj;
 
     }
+    // console.log("===============================================");
+    // console.log(mySubCategory);
     res.status(200).json({ msg: 'Member update successful', data: updateMember, mySubCategory: mySubCategory });
 }));
 
@@ -314,6 +349,87 @@ router.delete('/delete', isLoggedIn, catchAsync(async (req, res, next) => {
     });
     // console.log(category);
     res.status(200).json({ msg: 'Member found successful', data: member });
+}));
+
+router.post('/viewAllMember', isLoggedIn, catchAsync(async (req, res, next) => {
+
+    const memberFind = await prisma.memberSubCategory.findMany({
+        include: {
+
+            SubCategory: {
+                select: {
+                    id: true,
+                    name: true,
+                    Category: {
+                        select: {
+                            id: true,
+                            name: true
+                        }
+                    }
+                }
+            },
+            Member: true
+        }
+    });
+    let newArray = [];
+    for (let i = 0; i < memberFind.length; i++) {
+        let obj = {};
+        if (i == 0) {
+            obj = {
+                memberId: memberFind[i].Member.id,
+                name: memberFind[i].Member.name,
+                mobileNumber: memberFind[i].Member.mobileNumber,
+                pcGroup: memberFind[i].Member.pcGroup,
+                companyName: memberFind[i].Member.companyName,
+                SubCategory: [{
+                    subCategoryId: memberFind[i].SubCategory.id,
+                    name: memberFind[i].SubCategory.name,
+                    Category: {
+                        categoryId: memberFind[i].SubCategory.Category.id,
+                        name: memberFind[i].SubCategory.Category.name,
+                    }
+                }]
+            }
+            newArray.push(obj);
+        } else {
+            let count = 0;
+            for (let j = 0; j < newArray.length; j++) {
+                if (newArray[j].memberId == memberFind[i].Member.id) {
+                    count = 1;
+                    newArray[j].SubCategory.push({
+                        subCategoryId: memberFind[i].SubCategory.id,
+                        name: memberFind[i].SubCategory.name,
+                        Category: {
+                            categoryId: memberFind[i].SubCategory.Category.id,
+                            name: memberFind[i].SubCategory.Category.name,
+                        }
+                    })
+                }
+            }
+            if (count == 0) {
+                obj = {
+                    memberId: memberFind[i].Member.id,
+                    name: memberFind[i].Member.name,
+                    mobileNumber: memberFind[i].Member.mobileNumber,
+                    pcGroup: memberFind[i].Member.pcGroup,
+                    companyName: memberFind[i].Member.companyName,
+                    SubCategory: [{
+                        subCategoryId: memberFind[i].SubCategory.id,
+                        name: memberFind[i].SubCategory.name,
+                        Category: {
+                            categoryId: memberFind[i].SubCategory.Category.id,
+                            name: memberFind[i].SubCategory.Category.name,
+                        }
+                    }]
+                }
+                newArray.push(obj);
+            }
+        }
+    }
+    if (newArray.length == 0) return res.status(404).json({ msg: `Member not found`, data: {} });
+
+    // console.log(category);
+    res.status(200).json({ msg: 'Member found successful',no_of_member: newArray.length , data: newArray });
 }));
 
 // router.get('/', isLoggedIn, catchAsync(async (req, res, next) => {

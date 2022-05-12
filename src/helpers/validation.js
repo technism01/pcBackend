@@ -77,7 +77,7 @@ module.exports.addSubCategoryValidation =(data) =>{
 module.exports.addRequestValidation =(data) =>{
 	const addRequestSchema = Joi.object({
 		memberId:Joi.number().required(),
-		requests : Joi.array().min(1).items({memberId: Joi.number(), categoryId: Joi.number(), subCategoryId: Joi.number()}).required()
+		requests : Joi.array().items({memberId: Joi.number(), categoryId: Joi.number(), subCategoryId: Joi.number()}).required()
 	});
 
 	return addRequestSchema.validate(data);

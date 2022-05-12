@@ -26,9 +26,12 @@ router.post('/add', isLoggedIn, catchAsync(async (req, res, next) => {
             memberId: value.memberId
         }
     })
-    const addRequest = await prisma.request.createMany({ data: value.requests });
+    if(value.requests.length > 0) {
+        const addRequest = await prisma.request.createMany({ data: value.requests });
+        return res.status(201).json({ msg: 'Request successful', data: addRequest });
+    }
 
-    res.status(201).json({ msg: 'Request successful', data: addRequest });
+    res.status(201).json({ msg: 'Request deleted', data: [] });
 }));
 
 router.get('/', isLoggedIn, catchAsync(async (req, res, next) => {
@@ -64,69 +67,155 @@ router.get('/viewRequirement', isLoggedIn, catchAsync(async (req, res, next) => 
     })
     let newArray = [];
     let latestArray = [];
+    // console.log(array)
     for (let i = 0; i < array.length; i++) {
-        // console.log("hello" + i);
-        // console.log(array[i].memberId);
-        // if(array[i].memberId == req.query.memberId) {
-        // console.log(array[i]);
         let obj = {};
-        // console.log("hello" + i+ "if");
-        let member = await prisma.memberSubCategory.findMany({
-            where: {
-                subCategoryId: array[i].subCategoryId,
-            },
-            include: {
-                Member: true
-            }
-        })
-        // console.log(member);
-        let memberArray = [];
-        for (let j = 0; j < member.length; j++) {
-            // console.log(member[j].Member.id);
-            // console.log("=================");
-            if (member[j].Member.id != req.query.memberId) {
-                memberArray.push(member[j].Member)
-            }
-        }
-        // console.log(member);
-        if (newArray.length > 0) {
-            // console.log("vve" + newArray.length);
-            for (v = 0; v < newArray.length; v++) {
-                let sameSubCategoryArray = [];
-                if (newArray[v].id == array[i].Category.id) {
-
-                    for (let k = 0; k < newArray[v].SubCategory.length; k++) {
-                        sameSubCategoryArray.push(newArray[v].SubCategory[k]);
-                    }
-                    sameSubCategoryArray.push({
-                        id: array[i].SubCategory.id,
-                        name: array[i].SubCategory.name,
-                        Member: memberArray
-                    })
-                    obj = {
-                        id: array[i].Category.id,
-                        name: array[i].Category.name,
-                        SubCategory: sameSubCategoryArray,
-                    }
-                    newArray[v] = obj;
-                }
-            }
-        } else {
+        // console.log(" for " + i );
+        if (i == 0) {
+            // console.log(" for " + i );
             obj = {
                 id: array[i].Category.id,
                 name: array[i].Category.name,
                 SubCategory: [{
                     id: array[i].SubCategory.id,
                     name: array[i].SubCategory.name,
-                    Member: memberArray
-                }],
+                    Member: []
+                }]
             }
             newArray.push(obj);
+        } else {
+            // console.log(" for " + i );
+            let count = 0;
+            for (let j = 0; j < newArray.length; j++) {
+                // console.log(array[i].Category.id);
+                // console.log(" == "+newArray[j].id);
+                if (newArray[j].id == array[i].Category.id) {
+                    count = 1;
+                    let checkSubCategoryIdExist = 0;
+                    for (let k = 0; k < newArray[j].SubCategory.length; k++) {
+                        // console.log("SUB"+ array[i].SubCategory.id);
+                        // console.log("NEW SUB "+ newArray[j].SubCategory[k].id);
+                        if (array[i].SubCategory.id == newArray[j].SubCategory[k].id) {
+                            checkSubCategoryIdExist = 1;
+                            // newArray[j].SubCategory.push({
+                            //     id: array[i].SubCategory.id,
+                            //     name: array[i].SubCategory.name,
+                            //     Member: []
+                            // })
+                        }
+                    }
+                    if (checkSubCategoryIdExist == 0) {
+                        newArray[j].SubCategory.push({
+                            id: array[i].SubCategory.id,
+                            name: array[i].SubCategory.name,
+                            Member: []
+                        })
+                    }
+                }
+            }
+            if (count == 0) {
+                obj = {
+                    id: array[i].Category.id,
+                    name: array[i].Category.name,
+                    SubCategory: [{
+                        id: array[i].SubCategory.id,
+                        name: array[i].SubCategory.name,
+                        Member: []
+                    }]
+                }
+                newArray.push(obj);
+            }
         }
-        // console.log(member);
-        // console.log("===========================");
-        // }
     }
+    for (let i = 0; i < newArray.length; i++) {
+        console.log(newArray[i].id);
+        for (let j = 0; j < newArray[i].SubCategory.length; j++) {
+            let member = await prisma.memberSubCategory.findMany({
+                where: {
+                    subCategoryId: array[i].subCategoryId,
+                    NOT: {
+                        memberId: value.id
+                    }
+                },
+                include: {
+                    Member: true
+                }
+            })
+            console.log(newArray[i].SubCategory[j].id);
+            let memberArray = [];
+            for (let k = 0; k < member.length; k++) {
+                // if (member[j].Member.id != req.query.memberId) {
+                memberArray.push(member[k].Member)
+                // }
+            }
+
+            newArray[i].SubCategory[j].Member = memberArray;
+        }
+    }
+
+    // for (let i = 0; i < array.length; i++) {
+    //     // console.log("hello" + i);
+    //     // console.log(array[i].memberId);
+    //     // if(array[i].memberId == req.query.memberId) {
+    //     // console.log(array[i]);
+    //     let obj = {};
+    //     // console.log("hello" + i+ "if");
+    //     let member = await prisma.memberSubCategory.findMany({
+    //         where: {
+    //             subCategoryId: array[i].subCategoryId,
+    //         },
+    //         include: {
+    //             Member: true
+    //         }
+    //     })
+    //     // console.log(member);
+    //     let memberArray = [];
+    //     for (let j = 0; j < member.length; j++) {
+    //         // console.log(member[j].Member.id);
+    //         // console.log("=================");
+    //         if (member[j].Member.id != req.query.memberId) {
+    //             memberArray.push(member[j].Member)
+    //         }
+    //     }
+    //     // console.log(member);
+    //     if (newArray.length > 0) {
+    //         // console.log("vve" + newArray.length);
+    //         for (v = 0; v < newArray.length; v++) {
+    //             let sameSubCategoryArray = [];
+    //             if (newArray[v].id == array[i].Category.id) {
+
+    //                 for (let k = 0; k < newArray[v].SubCategory.length; k++) {
+    //                     sameSubCategoryArray.push(newArray[v].SubCategory[k]);
+    //                 }
+    //                 sameSubCategoryArray.push({
+    //                     id: array[i].SubCategory.id,
+    //                     name: array[i].SubCategory.name,
+    //                     Member: memberArray
+    //                 })
+    //                 obj = {
+    //                     id: array[i].Category.id,
+    //                     name: array[i].Category.name,
+    //                     SubCategory: sameSubCategoryArray,
+    //                 }
+    //                 newArray[v] = obj;
+    //             }
+    //         }
+    //     } else {
+    //         obj = {
+    //             id: array[i].Category.id,
+    //             name: array[i].Category.name,
+    //             SubCategory: [{
+    //                 id: array[i].SubCategory.id,
+    //                 name: array[i].SubCategory.name,
+    //                 Member: memberArray
+    //             }],
+    //         }
+    //         newArray.push(obj);
+    //     }
+    //     // console.log(member);
+    //     // console.log("===========================");
+    //     // }
+    // }
     // if(newArray.length == 0 ) return res.status(404).json({ msg: 'My Requirement not found', data: [] });
     res.status(200).json({ msg: 'My Requirement found successful', data: newArray });
 
@@ -158,72 +247,157 @@ router.get('/myLead', isLoggedIn, catchAsync(async (req, res, next) => {
             }
         }
     })
+    // console.log(mySubCategory);
     if (mySubCategory.length == 0) return res.status(404).json({ msg: 'Your Sub Category not found', data: [] });
     let newMySubCategory = [];
     for (let i = 0; i < mySubCategory.length; i++) {
         let obj = {};
         if (i == 0) {
-            const memberData = await prisma.request.findMany({
-                where: {
-                    subCategoryId: mySubCategory[i].SubCategory.id
-                },
-                include: {
-                    Member: true
-                }
-            })
-            let member = [];
-            memberData.map((mem) => {
-                if (value.memberId != mem.Member.id)
-                    member.push(mem.Member)
-            })
-            // console.log(memberData);
             obj = {
                 id: mySubCategory[i].SubCategory.Category.id,
                 name: mySubCategory[i].SubCategory.Category.name,
                 SubCategory: [{
                     id: mySubCategory[i].SubCategory.id,
                     name: mySubCategory[i].SubCategory.name,
-                    Member: member
+                    Member: []
                 }]
             }
             newMySubCategory.push(obj);
         } else {
+            let check = 0;
             for (let j = 0; j < newMySubCategory.length; j++) {
-                const memberData = await prisma.request.findMany({
-                    where: {
-                        subCategoryId: mySubCategory[i].SubCategory.id
-                    },
-                    include: {
-                        Member: true
-                    }
-                })
-                let member = [];
-                memberData.map((mem) => {
-                    if (value.memberId != mem.Member.id)
-                    member.push(mem.Member)
-                })
                 if (newMySubCategory[j].id == mySubCategory[i].SubCategory.Category.id) {
-                    newMySubCategory[j].SubCategory.push({
-                        id: mySubCategory[i].SubCategory.id,
-                        name: mySubCategory[i].SubCategory.name,
-                        Member: member
-                    })
-                } else {
-                    obj = {
-                        id: mySubCategory[i].SubCategory.Category.id,
-                        name: mySubCategory[i].SubCategory.Category.name,
-                        SubCategory: [{
+                    // console.log(mySubCategory[i].SubCategory.Category.id);
+                    // console.log("NEW => " + newMySubCategory[j].id);
+                    check = 1;
+                    // obj = {
+                    //     id: mySubCategory[i].SubCategory.Category.id,
+                    //     name: mySubCategory[i].SubCategory.Category.name,
+                    //     SubCategory: [{
+                    //         id: mySubCategory[i].SubCategory.id,
+                    //         name: mySubCategory[i].SubCategory.name,
+                    //         Member: []
+                    //     }]
+                    // }
+                    let checkSubCategoryIdExist = 0;
+                    for (let k = 0; k < newMySubCategory[j].SubCategory.length; k++) {
+                        if (mySubCategory[i].SubCategory.id == newMySubCategory[j].SubCategory[k].id) {
+                            checkSubCategoryIdExist = 1;
+
+                            // newMySubCategory[j].SubCategory.push({
+                            //     id: mySubCategory[i].SubCategory.id,
+                            //     name: mySubCategory[i].SubCategory.name,
+                            //     Member: []
+                            // })
+                        }
+                    }
+                    if (checkSubCategoryIdExist == 0) {
+                        newMySubCategory[j].SubCategory.push({
                             id: mySubCategory[i].SubCategory.id,
                             name: mySubCategory[i].SubCategory.name,
-                            Member: member
-                        }]
+                            Member: []
+                        })
                     }
-                    newMySubCategory.push(obj);
                 }
             }
-
+            if (check == 0) {
+                obj = {
+                    id: mySubCategory[i].SubCategory.Category.id,
+                    name: mySubCategory[i].SubCategory.Category.name,
+                    SubCategory: [{
+                        id: mySubCategory[i].SubCategory.id,
+                        name: mySubCategory[i].SubCategory.name,
+                        Member: []
+                    }]
+                }
+                newMySubCategory.push(obj);
+            }
         }
     }
+    for (let i = 0; i < newMySubCategory.length; i++) {
+        for (let j = 0; j < newMySubCategory[i].SubCategory.length; j++) {
+            // console.log(newMySubCategory[i].SubCategory[j].id);
+            const memberData = await prisma.request.findMany({
+                where: {
+                    subCategoryId: newMySubCategory[i].SubCategory[j].id
+                },
+                include: {
+                    Member: true
+                }
+            })
+            let member = [];
+            for (let v = 0; v < memberData.length; v++) {
+                if (value.memberId != memberData[v].Member.id)
+                    member.push(memberData[v].Member)
+            }
+            newMySubCategory[i].SubCategory[j].Member = member;
+        }
+    }
+
+    // for (let i = 0; i < mySubCategory.length; i++) {
+    //     let obj = {};
+    //     if (i == 0) {
+    //         const memberData = await prisma.request.findMany({
+    //             where: {
+    //                 subCategoryId: mySubCategory[i].SubCategory.id
+    //             },
+    //             include: {
+    //                 Member: true
+    //             }
+    //         })
+    //         let member = [];
+    //         memberData.map((mem) => {
+    //             if (value.memberId != mem.Member.id)
+    //                 member.push(mem.Member)
+    //         })
+    //         // console.log(memberData);
+    //         obj = {
+    //             id: mySubCategory[i].SubCategory.Category.id,
+    //             name: mySubCategory[i].SubCategory.Category.name,
+    //             SubCategory: [{
+    //                 id: mySubCategory[i].SubCategory.id,
+    //                 name: mySubCategory[i].SubCategory.name,
+    //                 Member: member
+    //             }]
+    //         }
+    //         newMySubCategory.push(obj);
+    //     } else {
+    //         for (let j = 0; j < newMySubCategory.length; j++) {
+    //             const memberData = await prisma.request.findMany({
+    //                 where: {
+    //                     subCategoryId: mySubCategory[i].SubCategory.id
+    //                 },
+    //                 include: {
+    //                     Member: true
+    //                 }
+    //             })
+    //             let member = [];
+    //             memberData.map((mem) => {
+    //                 if (value.memberId != mem.Member.id)
+    //                 member.push(mem.Member)
+    //             })
+    //             if (newMySubCategory[j].id == mySubCategory[i].SubCategory.Category.id) {
+    //                 newMySubCategory[j].SubCategory.push({
+    //                     id: mySubCategory[i].SubCategory.id,
+    //                     name: mySubCategory[i].SubCategory.name,
+    //                     Member: member
+    //                 })
+    //             } else {
+    //                 obj = {
+    //                     id: mySubCategory[i].SubCategory.Category.id,
+    //                     name: mySubCategory[i].SubCategory.Category.name,
+    //                     SubCategory: [{
+    //                         id: mySubCategory[i].SubCategory.id,
+    //                         name: mySubCategory[i].SubCategory.name,
+    //                         Member: member
+    //                     }]
+    //                 }
+    //                 newMySubCategory.push(obj);
+    //             }
+    //         }
+
+    //     }
+    // }
 
     res.status(200).json({ msg: 'My lead found successful', data: newMySubCategory });
 }));
