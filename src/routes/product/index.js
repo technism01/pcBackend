@@ -42,6 +42,36 @@ router.post('/add', isLoggedIn, catchAsync(async (req, res) => {
     res.status(201).json({ msg: 'Product add successful', data: addProduct });
 }));
 
+router.get('/filter_product', isLoggedIn, catchAsync(async (req, res, next) => {
+
+    const categoryId = parseInt(req.query.categoryId);
+    const subCategoryId = parseInt(req.query.subCategoryId);
+
+
+    if (!categoryId || !subCategoryId)
+        return res.status(400).json({
+            msg: `Please Provide Valid categoryId & subCategoryId`,
+            data: {},
+        });
+
+    const product = await prisma.product.findMany({
+        where:{
+            categoryId: categoryId,
+            subCategoryId: subCategoryId
+        },
+        orderBy: {
+            name: "asc"
+        },
+        include: {
+            Category: true,
+            SubCategory: true
+        }
+    });
+    if (product.length == 0) return res.status(404).json({ msg: `Product not found`, data: [] });
+
+    res.status(200).json({ msg: 'Product found successful', data: product });
+}));
+
 router.get('/', isLoggedIn, catchAsync(async (req, res, next) => {
 
     const product = await prisma.product.findMany({
