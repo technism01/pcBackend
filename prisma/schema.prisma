@@ -10,14 +10,15 @@ datasource db {
   url      = env("LOCAL_DATABASE_URL")
 }
 
-
 model Category {
-  id          Int           @id @default(autoincrement())
-  name        String
-  subCategory SubCategory[]
-  request     Request[]
+  id           Int           @id @default(autoincrement())
+  name         String
+  subCategory  SubCategory[]
+  total_amount Float?        @default(0)
+  Product      Product[]
 
   createdAt DateTime @default(now())
+  Need      Need[]
 }
 
 model SubCategory {
@@ -25,43 +26,104 @@ model SubCategory {
   name String
 
   createdAt         DateTime            @default(now())
-  Category          Category?           @relation(fields: [categoryId], references: [id])
+  Category          Category?           @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   categoryId        Int?
   memberSubCategory MemberSubCategory[]
-  request           Request[]
+
+  Product Product[]
+  Need    Need[]
 }
 
 model Member {
-  id                Int                 @id @default(autoincrement())
-  name              String
-  mobileNumber      String
-  pcGroup           String
-  companyName       String              @default("")
-  email             String?
-  profile           String?
-  // categoryIds    Int[]
-  // subCategoryIds    Int[]
-  memberSubCategory MemberSubCategory[]
-  request           Request[]
-  createdAt         DateTime            @default(now())
+  id                      Int                 @id @default(autoincrement())
+  name                    String
+  mobileNumber            String
+  pcGroup                 String
+  companyName             String              @default("")
+  email                   String?
+  profile                 String?
+  google_my_business_link String?
+  website_link            String?
+  instagram               String?
+  facebook                String?
+  linkedin                String?
+  business_given          Float               @default(0)
+  business_receive        Float               @default(0)
+  memberSubCategory       MemberSubCategory[]
+  My_product              My_product[]
+  createdAt               DateTime            @default(now())
+  Need                    Need[]
+  Lead                    Lead[]
 }
 
 model MemberSubCategory {
   id            Int          @id @default(autoincrement())
-  Member        Member?      @relation(fields: [memberId], references: [id])
+  Member        Member?      @relation(fields: [memberId], references: [id], onDelete: Cascade)
   memberId      Int?
-  SubCategory   SubCategory? @relation(fields: [subCategoryId], references: [id])
+  SubCategory   SubCategory? @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
   subCategoryId Int?
-  createdAt         DateTime            @default(now())
+  createdAt     DateTime     @default(now())
 }
 
-model Request {
-  id            Int          @id @default(autoincrement())
-  Member        Member?      @relation(fields: [memberId], references: [id])
-  memberId      Int?
-  SubCategory   SubCategory? @relation(fields: [subCategoryId], references: [id])
-  subCategoryId Int?
-  Category      Category?    @relation(fields: [categoryId], references: [id])
+model Product {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+
+  name String @default("")
+
+  My_product My_product[]
+
+  Category      Category?    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   categoryId    Int?
-  createdAt     DateTime     @default(now())
+  SubCategory   SubCategory? @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
+  subCategoryId Int?
+}
+
+model My_product {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+
+  Product   Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId Int?
+  Member    Member?  @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  memberId  Int?
+}
+
+model Need {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+
+  product  String? @default("")
+  status   String  @default("Active") //Active , Completed
+  priority String? @default("")
+
+  SubCategory   SubCategory? @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
+  subCategoryId Int?
+  Member        Member?      @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  memberId      Int?
+  Category      Category?    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId    Int?
+
+  Lead Lead[]
+}
+
+model Lead {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+
+  status String @default("Active") //Active , Completed
+
+  Need     Need?   @relation(fields: [needId], references: [id], onDelete: Cascade)
+  needId   Int?
+  Member   Member? @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  memberId Int?
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+
+  amount     Float @default(0)
+  needMember Json
+  leadMember Json
 }

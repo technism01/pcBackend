@@ -1,8 +1,6 @@
 const router = require("express").Router();
-const fs = require('fs');
 
 // * Prisma
-// const prisma = require("../../../helpers/prisma");
 const prisma = require("../../helpers/prisma");
 
 // * Data validation
@@ -15,42 +13,43 @@ const generateToken = require("../../helpers/generateToken");
 const { isLoggedIn } = require("../../middlewares/auth");
 const catchAsync = require("../../helpers/catchAsync");
 const { nanoid } = require("nanoid");
-const { single_file_upload } = require("../../helpers/fileUpload");
 
 router.post('/signup', catchAsync(async (req, res, next) => {
 
-    if (req.files !== null) {
-        if (req.files.profile) {
-            const profile_file = req.files.profile;
-            const store_file_path = "src/public/member/profile/";
-            const concat_file_name = nanoid();
-            const new_member_profile = single_file_upload(profile_file, concat_file_name, store_file_path);
-            if (new_member_profile) {
-                req.body.profile = "member/profile/" + new_member_profile;
-            }
-        }
-    }
-    if (req.body.subCategoryIds) {
-        req.body.subCategoryIds = JSON.parse(req.body.subCategoryIds)
-    }
+    // if (req.files !== null) {
+    //     if (req.files.profile) {
+    //         const profile_file = req.files.profile;
+    //         const store_file_path = "src/public/member/profile/";
+    //         const concat_file_name = nanoid();
+    //         const new_member_profile = single_file_upload(profile_file, concat_file_name, store_file_path);
+    //         if (new_member_profile) {
+    //             req.body.profile = "member/profile/" + new_member_profile;
+    //         }
+    //     }
+    // }
+    // if (req.body.subCategoryIds) {
+    //     req.body.subCategoryIds = JSON.parse(req.body.subCategoryIds)
+    // }
     const { error, value } = registerMemberValidation(req.body);
-    // console.log(value);
     if (error) return res.status(400).json({ msg: error.details[0].message, data: {} });
-    // res.end();
 
-    // const { mobile_number, email } = req.body;
     const ids = value.subCategoryIds
-    console.log("IDS=> " + ids);
     delete value.subCategoryIds;
+    let products = [];
+    if(value.product){
+        products = value.product;
+        delete value.product;
+    }
+    // console.log(products);
     const memberExistsNumber = await prisma.member.findFirst({
         where: {
             mobileNumber: value.mobileNumber
         }
     });
-    // console.log(memberExistsNumber);
     if (memberExistsNumber) return res.status(409).json({ msg: `Number is already registered`, data: {} });
+
     const addMember = await prisma.member.create({ data: value });
-    console.log("addMember => " + addMember);
+
     // ids.map(async (cat) => {
     //     const data = await prisma.memberSubCategory.create({
     //         data: {
@@ -70,6 +69,16 @@ router.post('/signup', catchAsync(async (req, res, next) => {
         })
 
     }
+    for (let i = 0; i < products.length; i++) {
+
+        await prisma.my_product.create({
+            data: {
+                memberId: addMember.id,
+                productId: products[i]
+            }
+        })
+    }
+
     const mySubCategory = await prisma.memberSubCategory.findMany({
         where: {
             memberId: addMember.id
@@ -104,22 +113,34 @@ router.post('/signup', catchAsync(async (req, res, next) => {
         //     }
         // }
     })
-    console.log("mySubCategory=> " + mySubCategory);
+    
     for (let i = 0; i < mySubCategory.length; i++) {
+        const products = await prisma.my_product.findMany({
+            where: {
+                memberId: addMember.id,
+                Product: {
+                    subCategoryId: mySubCategory[i].subCategoryId
+                }
+            },
+            include:{
+                Product: true
+            }
+        })
         let obj = {
             id: mySubCategory[i].id,
             memberId: mySubCategory[i].memberId,
             subCategoryId: mySubCategory[i].subCategoryId,
             categoryId: mySubCategory[i].SubCategory.Category.id,
-            createdAt: mySubCategory[i].createdAt
+            createdAt: mySubCategory[i].createdAt,
+            product: products
         };
         mySubCategory[i] = obj;
 
     }
-    console.log("NEW mySubCategory => " + mySubCategory);
-    // console.log(addMember);
+
+
     const token = generateToken(addMember.id);
-    // console.log(token);
+
     res.setHeader('x-authorization', token);
     res.status(201).json({ msg: 'Member register successful', data: addMember, token: token, mySubCategory: mySubCategory });
 }));
@@ -175,12 +196,25 @@ router.post('/login', catchAsync(async (req, res, next) => {
         // }
     })
     for (let i = 0; i < mySubCategory.length; i++) {
+        const products = await prisma.my_product.findMany({
+            where: {
+                memberId: memberLogin.id,
+                Product: {
+                    subCategoryId: mySubCategory[i].subCategoryId
+                }
+            },
+            include:{
+                Product: true
+            }
+        })
+
         let obj = {
             id: mySubCategory[i].id,
             memberId: mySubCategory[i].memberId,
             subCategoryId: mySubCategory[i].subCategoryId,
             categoryId: mySubCategory[i].SubCategory.Category.id,
-            createdAt: mySubCategory[i].createdAt
+            createdAt: mySubCategory[i].createdAt,
+            product: products
         };
         mySubCategory[i] = obj;
 
@@ -195,22 +229,22 @@ router.post('/login', catchAsync(async (req, res, next) => {
 router.patch('/update', catchAsync(async (req, res, next) => {
 
 
-    if (req.files !== null) {
-        if (req.files.profile) {
-            console.log(req.files.profile);
-            const profile_file = req.files.profile;
-            const store_file_path = "src/public/member/profile/";
-            const concat_file_name = nanoid();
-            const new_member_profile = single_file_upload(profile_file, concat_file_name, store_file_path);
-            if (new_member_profile) {
-                req.body.profile = "member/profile/" + new_member_profile;
-            }
-        }
-    }
+    // if (req.files !== null) {
+    //     if (req.files.profile) {
+    //         console.log(req.files.profile);
+    //         const profile_file = req.files.profile;
+    //         const store_file_path = "src/public/member/profile/";
+    //         const concat_file_name = nanoid();
+    //         const new_member_profile = single_file_upload(profile_file, concat_file_name, store_file_path);
+    //         if (new_member_profile) {
+    //             req.body.profile = "member/profile/" + new_member_profile;
+    //         }
+    //     }
+    // }
     // if(req.body.id) req.body.id = parseInt(req.body.id)
-    if (req.body.subCategoryIds) {
-        req.body.subCategoryIds = JSON.parse(req.body.subCategoryIds)
-    }
+    // if (req.body.subCategoryIds) {
+    //     req.body.subCategoryIds = JSON.parse(req.body.subCategoryIds)
+    // }
     const { error, value } = updateMemberValidation(req.body);
     // console.log(value);
     if (error) return res.status(400).json({ msg: error.details[0].message, data: {} });
@@ -225,11 +259,17 @@ router.patch('/update', catchAsync(async (req, res, next) => {
     const ids = value.subCategoryIds
     delete value.subCategoryIds;
 
-    if (memberData.profile != "") {
-        if (fs.existsSync(`public/${memberData.profile}`)) {
-            fs.unlinkSync(`public/${memberData.profile}`);
-        }
+    let products = [];
+    if(value.product){
+        products = value.product;
+        delete value.product;
     }
+
+    // if (memberData.profile != "") {
+    //     if (fs.existsSync(`public/${memberData.profile}`)) {
+    //         fs.unlinkSync(`public/${memberData.profile}`);
+    //     }
+    // }
     // console.log(memberExistsNumber);
 
     const updateMember = await prisma.member.update({
@@ -255,6 +295,20 @@ router.patch('/update', catchAsync(async (req, res, next) => {
                 }
             })
 
+        }
+        await prisma.my_product.deleteMany({
+            where: {
+                memberId: value.id
+            }
+        })
+        for (let i = 0; i < products.length; i++) {
+
+            await prisma.my_product.create({
+                data: {
+                    memberId: value.id,
+                    productId: products[i]
+                }
+            })
         }
         // ids.map(async (cat) => {
         //     // const obj = {
@@ -306,12 +360,24 @@ router.patch('/update', catchAsync(async (req, res, next) => {
     // console.log("===============================================");
     // console.log(mySubCategory);
     for (let i = 0; i < mySubCategory.length; i++) {
+        const products = await prisma.my_product.findMany({
+            where: {
+                memberId: value.id,
+                Product: {
+                    subCategoryId: mySubCategory[i].subCategoryId
+                }
+            },
+            include:{
+                Product: true
+            }
+        })
         let obj = {
             id: mySubCategory[i].id,
             memberId: mySubCategory[i].memberId,
             subCategoryId: mySubCategory[i].subCategoryId,
             categoryId: mySubCategory[i].SubCategory.Category.id,
-            createdAt: mySubCategory[i].createdAt
+            createdAt: mySubCategory[i].createdAt,
+            product: products
         };
         mySubCategory[i] = obj;
 
@@ -331,22 +397,6 @@ router.delete('/delete', isLoggedIn, catchAsync(async (req, res, next) => {
     });
     if (!memberFind) return res.status(404).json({ msg: `Member not found`, data: {} });
 
-    await prisma.memberSubCategory.deleteMany({
-        where: {
-            memberId: req.body.id
-        }
-    });
-
-    await prisma.request.deleteMany({
-        where: {
-            memberId: req.body.id
-        }
-    })
-    const member = await prisma.member.delete({
-        where: {
-            id: req.body.id
-        }
-    });
     // console.log(category);
     res.status(200).json({ msg: 'Member found successful', data: member });
 }));
@@ -429,7 +479,7 @@ router.post('/viewAllMember', isLoggedIn, catchAsync(async (req, res, next) => {
     if (newArray.length == 0) return res.status(404).json({ msg: `Member not found`, data: {} });
 
     // console.log(category);
-    res.status(200).json({ msg: 'Member found successful',no_of_member: newArray.length , data: newArray });
+    res.status(200).json({ msg: 'Member found successful', no_of_member: newArray.length, data: newArray });
 }));
 
 // router.get('/', isLoggedIn, catchAsync(async (req, res, next) => {

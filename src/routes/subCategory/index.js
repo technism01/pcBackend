@@ -1,21 +1,15 @@
 const router = require("express").Router();
-const fs = require('fs');
 
 // * Prisma
-// const prisma = require("../../../helpers/prisma");
+
 const prisma = require("../../helpers/prisma");
 
 // * Data validation
 const { addSubCategoryValidation } = require("../../helpers/validation");
 
-// * TOKEN
-const generateToken = require("../../helpers/generateToken");
-
 // * MIDDLEWARE
 const { isLoggedIn } = require("../../middlewares/auth");
 const catchAsync = require("../../helpers/catchAsync");
-const { nanoid } = require("nanoid");
-const { single_file_upload } = require("../../helpers/fileUpload");
 
 router.post('/add', isLoggedIn, catchAsync(async (req, res, next) => {
 

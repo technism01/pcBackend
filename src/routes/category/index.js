@@ -51,23 +51,6 @@ router.delete('/delete', isLoggedIn, catchAsync(async (req, res, next) => {
     });
     if (!categoryFind) return res.status(404).json({ msg: `Category not found`, data: {} });
     
-    await prisma.subCategory.deleteMany({
-        where : {
-            categoryId: req.body.id
-        }
-    });
-    await prisma.memberSubCategory.deleteMany({
-        where:{
-            subCategoryId: null
-        }
-    })
-    await prisma.request.deleteMany({
-        where : {
-            categoryId: req.body.id
-        }
-    });
-
-
     const category = await prisma.category.delete({
         where : {
             id: req.body.id

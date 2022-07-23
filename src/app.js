@@ -23,6 +23,12 @@ app.use("/api/member", require("./routes/member"));
 app.use("/api/category", require("./routes/category"));
 app.use("/api/subCategory", require("./routes/subCategory"));
 app.use("/api/request", require("./routes/request"));
+app.use("/api/product", require("./routes/product"));
+app.use("/api/my_product", require("./routes/my_product"));
+app.use("/api/need", require("./routes/need"));
+app.use("/api/lead", require("./routes/lead"));
+app.use("/api/notification", require("./routes/notification"));
+app.use("/api/s3_upload_url", require("./routes/s3_upload_url"));
 
 
 // * ROUTES
@@ -38,7 +44,7 @@ app.use((err, req, res, next) => {
 	// console.log(err);
 	err.statusCode = err.statusCode || 500;
 	err.message = err.message;
-	// console.log(err.message);
+	console.log(err.message);
 	res.status(err.statusCode).json({
 		msg: "Internal server error",
 		error: err.message,
