@@ -33,7 +33,7 @@ app.use("/api/s3_upload_url", require("./routes/s3_upload_url"));
 
 // * ROUTES
 app.get("/", (req, res) => {
-	res.status(200).json({ msg: `PC Backend is Working` });
+	res.status(200).json({ msg: `PC Backend is Working updated` });
 });
 
 app.use("*", function (req, res) {
