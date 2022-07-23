@@ -482,53 +482,29 @@ router.post('/viewAllMember', isLoggedIn, catchAsync(async (req, res, next) => {
     res.status(200).json({ msg: 'Member found successful', no_of_member: newArray.length, data: newArray });
 }));
 
-// router.get('/', isLoggedIn, catchAsync(async (req, res, next) => {
-//     // const { error, value } = deleteServiceValidation(req.body);
-//     // if (error) return res.status(400).json({ msg: error.details[0].message, data: {} });
+router.get('/my_business_transaction/:memberId', isLoggedIn, catchAsync(async (req, res, next) => {
 
-//     const services = await prisma.services.findMany({
-//         // select: {
-//         // 	name: true,
-//         // 	id: true,
-//         // 	categoryId: true,
-//         // 	subCategoryId: true
-//         // }
-//         include: {
-//             Category: {
-//                 select: {
-//                     name: true
-//                 }
-//             },
-//             SubCategory: {
-//                 select: {
-//                     name: true
-//                 }
-//             }
-//         },
-//         // select :{
-//         // 	id: true,
-//         // 	name: true
-//         // }
-//     });
+    const id = parseInt(req.params.memberId);
 
-//     return res.status(200).json({ msg: 'Service found successful', data: services });
-// }));
+    if (!id)
+        return res.status(400).json({
+            msg: `Please Provide Valid Id`,
+            data: {},
+        });
 
-// if (req.files !== null) {
-// 	if (req.files.profile_image) {
-// 		const profile_image_file = req.files.profile_image;
-// 		const store_file_path = "./public/customer/profile/";
-// 		const concat_file_name = nanoid();
-// 		const new_customer_profile_image = single_file_upload(profile_image_file, concat_file_name, store_file_path);
-// 		if (new_customer_profile_image) {
-// 			updateObject.profile_image = "customer/profile/" + new_customer_profile_image;
-// 		}
-// 		// if(guest_find_object[0].guest_profile_image != "") {
-// 		// 	if(fs.existsSync(`public/${guest_find_object[0].guest_profile_image}`)) {
-// 		// 		fs.unlinkSync(`public/${guest_find_object[0].guest_profile_image}`); 
-// 		// 	}
-// 		// }
-// 	}
-// }
+        const member = await prisma.member.findUnique({
+            where:{
+                id: id
+            },
+            select: {
+                business_given: true,
+                business_receive: true
+            }
+        })
+    if (!member) return res.status(404).json({ msg: `Member not found`, data: [] });
+
+    res.status(200).json({ msg: 'Member found successful', data: member });
+}));
+
 
 module.exports = router;

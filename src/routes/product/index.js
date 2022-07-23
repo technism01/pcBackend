@@ -49,16 +49,8 @@ router.get('/', isLoggedIn, catchAsync(async (req, res, next) => {
             name: "asc"
         },
         include: {
-            Category: {
-                select: {
-                    name: true
-                }
-            },
-            SubCategory: {
-                select : {
-                    name: true
-                }
-            }
+            Category: true,
+            SubCategory: true
         }
     });
     if (product.length == 0) return res.status(404).json({ msg: `Product not found`, data: [] });
