@@ -114,9 +114,12 @@ router.get('/:memberId', isLoggedIn, catchAsync(async (req, res) => {
                     ]
                 },
                 select: {
-                    Member: true
+                    Member: true,
+                    priority: true,
+                    product: true
                 }
             })
+            console.log(lead_member);
             let lead = []
             for (let k = 0; k < lead_member.length; k++) {
                 // * for member according category -> subCategory -> products start 
@@ -138,22 +141,24 @@ router.get('/:memberId', isLoggedIn, catchAsync(async (req, res) => {
                 let memberCategory = [];
                 for (let v = 0; v < data.length; v++) {
 
-                    
+
                     const pro = await prisma.my_product.findMany({
                         where: {
                             AND: [
                                 { memberId: lead_member[k].Member.id },
-                                {Product: {
-                                    categoryId: data[v].SubCategory.Category.id,
-                                    subCategoryId: data[v].SubCategory.id
-                                }}
+                                {
+                                    Product: {
+                                        categoryId: data[v].SubCategory.Category.id,
+                                        subCategoryId: data[v].SubCategory.id
+                                    }
+                                }
                             ]
                         },
-                        select:{
+                        select: {
                             Product: true
                         }
                     })
-                    
+
                     if (v == 0) {
                         memberCategory.push({
                             id: data[v].SubCategory.Category.id,
@@ -190,6 +195,8 @@ router.get('/:memberId', isLoggedIn, catchAsync(async (req, res) => {
                     }
                 }
                 lead_member[k].Member.category = memberCategory;
+                lead_member[k].Member.priority = lead_member[k].priority;
+                lead_member[k].Member.product = lead_member[k].product;
                 // * for member according category -> subCategory -> products start
                 lead.push(lead_member[k].Member)
             }

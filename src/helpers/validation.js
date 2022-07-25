@@ -93,7 +93,6 @@ module.exports.getRequestValidation = (data) => {
 
 module.exports.addProductValidation = (data) => {
 	const addProductSchema = Joi.object({
-		memberId: Joi.number().required(),
 		name: Joi.string().min(3).max(50).required(),
 		categoryId: Joi.number().required(),
 		subCategoryId: Joi.number().required()

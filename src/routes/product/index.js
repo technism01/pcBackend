@@ -16,11 +16,9 @@ router.post('/add', isLoggedIn, catchAsync(async (req, res) => {
     const { error, value } = addProductValidation(req.body);
     if (error) return res.status(400).json({ msg: error.details[0].message, data: {} });
 
-    const memberId = value.memberId;
-    delete value.memberId;
     const exists_product = await prisma.product.findFirst({
-        where : {
-            name : {
+        where: {
+            name: {
                 equals: value.name,
                 mode: "insensitive"
             }
@@ -32,13 +30,6 @@ router.post('/add', isLoggedIn, catchAsync(async (req, res) => {
         data: value
     });
 
-    const obj = {
-        memberId: memberId,
-        productId: addProduct.id
-    }
-    await prisma.my_product.create({
-        data: obj
-    })
     res.status(201).json({ msg: 'Product add successful', data: addProduct });
 }));
 
@@ -55,7 +46,7 @@ router.get('/filter_product', isLoggedIn, catchAsync(async (req, res, next) => {
         });
 
     const product = await prisma.product.findMany({
-        where:{
+        where: {
             categoryId: categoryId,
             subCategoryId: subCategoryId
         },
