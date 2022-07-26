@@ -213,6 +213,83 @@ router.get('/:memberId', isLoggedIn, catchAsync(async (req, res) => {
             }
         }
     });
+
+    for (let i = 0; i < need.length; i++) {
+        for (let j = 0; j < need[i].Lead.length; j++) {
+            const data = await prisma.memberSubCategory.findMany({
+                where: {
+                    memberId: need[i].Lead[j].Member.id
+                },
+                select: {
+                    SubCategory: {
+                        select: {
+                            id: true,
+                            name: true,
+                            Category: true
+                        }
+                    }
+                }
+            })
+
+            let memberCategory = [];
+            for (let v = 0; v < data.length; v++) {
+
+                const pro = await prisma.my_product.findMany({
+                    where: {
+                        AND: [
+                            { memberId: need[i].Lead[j].Member.id },
+                            {
+                                Product: {
+                                    categoryId: data[v].SubCategory.Category.id,
+                                    subCategoryId: data[v].SubCategory.id
+                                }
+                            }
+                        ]
+                    },
+                    select: {
+                        Product: true
+                    }
+                })
+
+                if (v == 0) {
+                    memberCategory.push({
+                        id: data[v].SubCategory.Category.id,
+                        name: data[v].SubCategory.Category.name,
+                        subCategory: [{
+                            id: data[v].SubCategory.id,
+                            name: data[v].SubCategory.name,
+                            product: pro
+                        }]
+                    })
+                } else {
+                    let check = 0;
+                    for (let d = 0; d < memberCategory.length; d++) {
+                        if (memberCategory[d].id == data[v].SubCategory.Category.id) {
+                            memberCategory[d].subCategory.push({
+                                id: data[v].SubCategory.id,
+                                name: data[v].SubCategory.name,
+                                product: pro
+                            })
+                            check = 1;
+                        }
+                    }
+                    if (check == 0) {
+                        memberCategory.push({
+                            id: data[v].SubCategory.Category.id,
+                            name: data[v].SubCategory.Category.name,
+                            subCategory: [{
+                                id: data[v].SubCategory.id,
+                                name: data[v].SubCategory.name,
+                                product: pro
+                            }]
+                        })
+                    }
+                }
+            }
+            need[i].Lead[j].Member.category = memberCategory;
+
+        }
+    }
     if (need.length == 0) return res.status(404).json({ msg: `Need not found`, data: [] });
 
     res.status(200).json({ msg: 'Need found successful', data: need });

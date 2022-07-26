@@ -119,7 +119,7 @@ router.get('/:memberId', isLoggedIn, catchAsync(async (req, res) => {
                     product: true
                 }
             })
-            console.log(lead_member);
+            // console.log(lead_member);
             let lead = []
             for (let k = 0; k < lead_member.length; k++) {
                 // * for member according category -> subCategory -> products start 
