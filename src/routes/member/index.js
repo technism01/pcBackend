@@ -1,4 +1,5 @@
 const router = require("express").Router();
+const fs = require("fs");
 
 // * Prisma
 const prisma = require("../../helpers/prisma");
@@ -13,30 +14,35 @@ const generateToken = require("../../helpers/generateToken");
 const { isLoggedIn } = require("../../middlewares/auth");
 const catchAsync = require("../../helpers/catchAsync");
 const { nanoid } = require("nanoid");
+const { single_file_upload } = require("../../helpers/fileUpload");
 
 router.post('/signup', catchAsync(async (req, res, next) => {
 
-    // if (req.files !== null) {
-    //     if (req.files.profile) {
-    //         const profile_file = req.files.profile;
-    //         const store_file_path = "src/public/member/profile/";
-    //         const concat_file_name = nanoid();
-    //         const new_member_profile = single_file_upload(profile_file, concat_file_name, store_file_path);
-    //         if (new_member_profile) {
-    //             req.body.profile = "member/profile/" + new_member_profile;
-    //         }
-    //     }
-    // }
-    // if (req.body.subCategoryIds) {
-    //     req.body.subCategoryIds = JSON.parse(req.body.subCategoryIds)
-    // }
+    if (req.files !== null) {
+        if (req.files.profile) {
+            const profile_file = req.files.profile;
+            const store_file_path = "src/public/member/profile/";
+            const concat_file_name = nanoid();
+            const new_member_profile = single_file_upload(profile_file, concat_file_name, store_file_path);
+            if (new_member_profile) {
+                req.body.profile = "member/profile/" + new_member_profile;
+            }
+        }
+    }
+    if (req.body.subCategoryIds) {
+        req.body.subCategoryIds = JSON.parse(req.body.subCategoryIds)
+    }
+    if (req.body.product) {
+        req.body.product = JSON.parse(req.body.product)
+    }
+
     const { error, value } = registerMemberValidation(req.body);
     if (error) return res.status(400).json({ msg: error.details[0].message, data: {} });
 
     const ids = value.subCategoryIds
     delete value.subCategoryIds;
     let products = [];
-    if(value.product){
+    if (value.product) {
         products = value.product;
         delete value.product;
     }
@@ -113,7 +119,7 @@ router.post('/signup', catchAsync(async (req, res, next) => {
         //     }
         // }
     })
-    
+
     for (let i = 0; i < mySubCategory.length; i++) {
         const products = await prisma.my_product.findMany({
             where: {
@@ -122,7 +128,7 @@ router.post('/signup', catchAsync(async (req, res, next) => {
                     subCategoryId: mySubCategory[i].subCategoryId
                 }
             },
-            include:{
+            include: {
                 Product: true
             }
         })
@@ -203,7 +209,7 @@ router.post('/login', catchAsync(async (req, res, next) => {
                     subCategoryId: mySubCategory[i].subCategoryId
                 }
             },
-            include:{
+            include: {
                 Product: true
             }
         })
@@ -229,22 +235,25 @@ router.post('/login', catchAsync(async (req, res, next) => {
 router.patch('/update', catchAsync(async (req, res, next) => {
 
 
-    // if (req.files !== null) {
-    //     if (req.files.profile) {
-    //         console.log(req.files.profile);
-    //         const profile_file = req.files.profile;
-    //         const store_file_path = "src/public/member/profile/";
-    //         const concat_file_name = nanoid();
-    //         const new_member_profile = single_file_upload(profile_file, concat_file_name, store_file_path);
-    //         if (new_member_profile) {
-    //             req.body.profile = "member/profile/" + new_member_profile;
-    //         }
-    //     }
-    // }
-    // if(req.body.id) req.body.id = parseInt(req.body.id)
-    // if (req.body.subCategoryIds) {
-    //     req.body.subCategoryIds = JSON.parse(req.body.subCategoryIds)
-    // }
+    if (req.files !== null) {
+        if (req.files.profile) {
+            console.log(req.files.profile);
+            const profile_file = req.files.profile;
+            const store_file_path = "src/public/member/profile/";
+            const concat_file_name = nanoid();
+            const new_member_profile = single_file_upload(profile_file, concat_file_name, store_file_path);
+            if (new_member_profile) {
+                req.body.profile = "member/profile/" + new_member_profile;
+            }
+        }
+    }
+    if (req.body.id) req.body.id = parseInt(req.body.id)
+    if (req.body.subCategoryIds) {
+        req.body.subCategoryIds = JSON.parse(req.body.subCategoryIds)
+    }
+    if (req.body.product) {
+        req.body.product = JSON.parse(req.body.product)
+    }
     const { error, value } = updateMemberValidation(req.body);
     // console.log(value);
     if (error) return res.status(400).json({ msg: error.details[0].message, data: {} });
@@ -260,16 +269,18 @@ router.patch('/update', catchAsync(async (req, res, next) => {
     delete value.subCategoryIds;
 
     let products = [];
-    if(value.product){
+    if (value.product) {
         products = value.product;
         delete value.product;
     }
 
-    // if (memberData.profile != "") {
-    //     if (fs.existsSync(`public/${memberData.profile}`)) {
-    //         fs.unlinkSync(`public/${memberData.profile}`);
-    //     }
-    // }
+    if (value.profile && memberData.profile != null) {
+        // console.log("hello 1");
+        if (fs.existsSync(`src/public/${memberData.profile}`)) {
+            fs.unlinkSync(`src/public/${memberData.profile}`);
+            console.log("hello");
+        }
+    }
     // console.log(memberExistsNumber);
 
     const updateMember = await prisma.member.update({
@@ -367,7 +378,7 @@ router.patch('/update', catchAsync(async (req, res, next) => {
                     subCategoryId: mySubCategory[i].subCategoryId
                 }
             },
-            include:{
+            include: {
                 Product: true
             }
         })
@@ -492,15 +503,15 @@ router.get('/my_business_transaction/:memberId', isLoggedIn, catchAsync(async (r
             data: {},
         });
 
-        const member = await prisma.member.findUnique({
-            where:{
-                id: id
-            },
-            select: {
-                business_given: true,
-                business_receive: true
-            }
-        })
+    const member = await prisma.member.findUnique({
+        where: {
+            id: id
+        },
+        select: {
+            business_given: true,
+            business_receive: true
+        }
+    })
     if (!member) return res.status(404).json({ msg: `Member not found`, data: [] });
 
     res.status(200).json({ msg: 'Member found successful', data: member });
