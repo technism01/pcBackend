@@ -414,8 +414,8 @@ router.delete('/delete', isLoggedIn, catchAsync(async (req, res, next) => {
     if (!memberFind) return res.status(404).json({ msg: `Member not found`, data: {} });
 
     if (memberFind.profile != null) {
-        if (fs.existsSync(`src/public/${memberData.profile}`)) {
-            fs.unlinkSync(`src/public/${memberData.profile}`);
+        if (fs.existsSync(`src/public/${memberFind.profile}`)) {
+            fs.unlinkSync(`src/public/${memberFind.profile}`);
         }
     }
 
