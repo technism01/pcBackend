@@ -275,13 +275,11 @@ router.patch('/update', catchAsync(async (req, res, next) => {
     }
 
     if (value.profile && memberData.profile != null) {
-        // console.log("hello 1");
         if (fs.existsSync(`src/public/${memberData.profile}`)) {
             fs.unlinkSync(`src/public/${memberData.profile}`);
-            console.log("hello");
         }
     }
-    // console.log(memberExistsNumber);
+
 
     const updateMember = await prisma.member.update({
         where: {
@@ -289,14 +287,14 @@ router.patch('/update', catchAsync(async (req, res, next) => {
         },
         data: value
     });
-    // console.log(ids);
+
     if (ids && ids.length > 0) {
         const data = await prisma.memberSubCategory.deleteMany({
             where: {
                 memberId: value.id
             }
         })
-        // console.log(data);
+
         for (let i = 0; i < ids.length; i++) {
 
             await prisma.memberSubCategory.create({
@@ -368,8 +366,8 @@ router.patch('/update', catchAsync(async (req, res, next) => {
         //     }
         // }
     })
-    // console.log("===============================================");
-    // console.log(mySubCategory);
+
+
     for (let i = 0; i < mySubCategory.length; i++) {
         const products = await prisma.my_product.findMany({
             where: {
@@ -393,23 +391,41 @@ router.patch('/update', catchAsync(async (req, res, next) => {
         mySubCategory[i] = obj;
 
     }
-    // console.log("===============================================");
-    // console.log(mySubCategory);
+
+
     res.status(200).json({ msg: 'Member update successful', data: updateMember, mySubCategory: mySubCategory });
 }));
 
 router.delete('/delete', isLoggedIn, catchAsync(async (req, res, next) => {
 
+    const id = parseInt(req.body.id);
+
+    if (!id)
+        return res.status(400).json({
+            msg: `Please Provide Valid Id`,
+            data: {},
+        });
 
     const memberFind = await prisma.member.findUnique({
         where: {
-            id: req.body.id
+            id: id
         }
     });
     if (!memberFind) return res.status(404).json({ msg: `Member not found`, data: {} });
 
-    // console.log(category);
-    res.status(200).json({ msg: 'Member found successful', data: member });
+    if (memberFind.profile != null) {
+        if (fs.existsSync(`src/public/${memberData.profile}`)) {
+            fs.unlinkSync(`src/public/${memberData.profile}`);
+        }
+    }
+
+    const member = await prisma.member.delete({
+        where: {
+            id: id
+        }
+    })
+
+    res.status(200).json({ msg: 'Member deleted successful', data: member });
 }));
 
 router.post('/viewAllMember', isLoggedIn, catchAsync(async (req, res, next) => {
