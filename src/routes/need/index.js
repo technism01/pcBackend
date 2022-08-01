@@ -208,7 +208,8 @@ router.get('/:memberId', isLoggedIn, catchAsync(async (req, res) => {
             SubCategory: true,
             Lead: {
                 select: {
-                    Member: true
+                    Member: true,
+                    id: true
                 }
             }
         }
