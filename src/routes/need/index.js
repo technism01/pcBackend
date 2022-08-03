@@ -21,6 +21,7 @@ router.post('/add', isLoggedIn, catchAsync(async (req, res) => {
             memberId: value.memberId,
             subCategoryId: value.subCategoryId,
             categoryId: value.categoryId,
+            product: value.product,
             status: "Active"
         }
     })
